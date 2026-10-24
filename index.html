@@ -1,0 +1,1405 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Zest</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0A0B14; --plum:#272937; --card:rgba(24,26,42,.94);
+  --gold:#e9d09b; --gold-deep:#c9a35c; --cream:#f8eedc; --muted:#c8bed6; --rose:#e88b9e; --sage:#5dbeb0; --safe:#72d5a3;
+  --sans:"Plus Jakarta Sans","Helvetica Neue",Arial,system-ui,sans-serif;
+  --serif:var(--sans);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--cream);font-family:var(--sans);overflow:hidden;-webkit-font-smoothing:antialiased}
+canvas#stage{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+video#cam{position:fixed;left:0;top:0;width:2px;height:2px;opacity:0;pointer-events:none}
+.hidden{display:none!important}
+
+.screen{position:fixed;inset:0;display:flex;text-align:center;padding:24px;overflow-y:auto;
+  background:radial-gradient(ellipse at 50% 40%,rgba(10,11,20,.35),rgba(10,11,20,.82) 75%);z-index:10}
+.eyebrow{font-size:12px;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);margin:0 0 6px;font-weight:600}
+h1{font-family:var(--serif);font-weight:500;font-size:clamp(28px,3.4vw,40px);line-height:1;margin:0;color:var(--gold);letter-spacing:-.02em}
+.lede{font-family:var(--serif);font-size:clamp(18px,min(2vw,3vh),24px);line-height:1.4;margin:0 auto;max-width:520px;color:var(--muted);font-weight:400}
+.btn{font-family:var(--sans);font-size:24px;font-weight:700;letter-spacing:.04em;color:var(--bg);background:var(--gold);
+  border:0;border-radius:999px;padding:20px 64px;cursor:pointer;transition:transform .2s,box-shadow .2s;box-shadow:0 10px 40px rgba(233,208,155,.25)}
+.btn:hover,.btn:focus-visible{transform:translateY(-2px);box-shadow:0 14px 50px rgba(233,208,155,.4)}
+:focus-visible{outline:3px solid var(--cream);outline-offset:3px}
+.btn.ghost{background:transparent;color:var(--gold);border:1.5px solid rgba(233,208,155,.55);box-shadow:none;font-size:16px;padding:14px 30px;min-height:48px}
+.btn.ghost:hover{background:rgba(233,208,155,.12)}
+.small{font-size:15px;line-height:1.5;color:var(--muted);max-width:520px;margin:10px auto 0}
+.small span{display:block}
+[data-privacy]::before{content:'\25CF';color:var(--safe);margin-right:6px;font-size:10px;vertical-align:2px}
+.streak{font-family:var(--serif);font-style:italic;font-size:18px;color:var(--rose);margin:0;min-height:1em}
+.spinner{width:54px;height:54px;border-radius:50%;border:3px solid rgba(233,208,155,.2);border-top-color:var(--gold);margin:0 auto 26px;animation:spin 1.1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loadMsg{font-family:var(--serif);font-size:24px;color:var(--cream);font-weight:400}
+
+.iconbtn{position:fixed;top:14px;right:14px;z-index:6;width:48px;height:48px;border-radius:50%;border:1px solid rgba(233,208,155,.35);
+  background:rgba(24,26,42,.85);color:var(--gold);display:grid;place-items:center;cursor:pointer}
+.iconbtn:hover{background:rgba(233,208,155,.16)}
+.iconbtn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:var(--card);border:1px solid rgba(233,208,155,.4);
+  padding:14px 26px;border-radius:14px;font-size:16px;z-index:30;max-width:80vw;text-align:center;transition:opacity .4s}
+
+#settings{position:fixed;top:0;right:0;bottom:0;width:min(420px,100vw);background:var(--card);border-left:1px solid rgba(233,208,155,.3);
+  z-index:20;padding:26px 26px 40px;overflow:auto}
+#settings h2{font-family:var(--serif);font-size:30px;margin:0 0 4px;color:var(--gold);font-weight:500;letter-spacing:-.02em}
+#settings .sub{color:var(--muted);font-size:15px;margin:0 0 22px}
+.grp{margin:0 0 20px}
+.grp label{display:block;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;font-weight:600}
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.seg button{font:600 15px var(--sans);color:var(--cream);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);
+  padding:10px 16px;min-height:42px;border-radius:999px;cursor:pointer}
+.seg button:hover{background:rgba(255,255,255,.12)}
+.seg button.on{background:var(--gold);color:var(--bg);border-color:var(--gold)}
+.hint{color:var(--muted);font-size:14px;margin:8px 0 0;line-height:1.45}
+
+/* Welcome screen: brand + controls in the corners, one clear CTA in the centre */
+#welcome{display:flex;flex-direction:column;padding:28px 36px;text-align:left}
+#welcome>div{margin:0}
+.topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap}
+.brand{text-align:left}
+.topctl{display:flex;align-items:center;gap:10px}
+.hero-center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:24px 0}
+.footer-note{text-align:center;padding-top:4px}
+.row{display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap}
+.langsw{margin-top:4px}
+.langsw button{min-height:40px}
+@media (max-width:640px){.topbar{justify-content:center}.brand{text-align:center}}
+@media (prefers-reduced-motion:reduce){.spinner{animation-duration:4s}.btn{transition:none}#toast{transition:none}}
+</style>
+</head>
+<body>
+<canvas id="stage" role="img" aria-label="Zest"></canvas>
+<video id="cam" playsinline muted></video>
+
+<button class="iconbtn hidden" id="gear" data-i18n-aria="aria.gear" aria-label="Settings">
+  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+</button>
+
+<main class="screen" id="welcome">
+  <div class="topbar">
+    <div class="brand">
+      <p class="eyebrow" data-i18n="eyebrow"></p>
+      <h1>Zest</h1>
+    </div>
+    <div class="topctl">
+      <button class="btn ghost" id="openSettings" data-i18n="settings"></button>
+    </div>
+  </div>
+  <div class="hero-center">
+    <p class="streak" id="streak" aria-live="polite"></p>
+    <button class="btn" id="begin" data-i18n="begin"></button>
+    <p class="lede" id="welcomeLede"></p>
+    <div class="seg langsw row" id="langSw" role="group" aria-label="Language"></div>
+  </div>
+  <div class="footer-note">
+    <p class="small"><span data-i18n="small1"></span><span data-privacy data-i18n="small2"></span></p>
+  </div>
+</main>
+
+<div class="screen hidden" id="loading" role="status" aria-live="polite">
+  <div><div class="spinner"></div><div id="loadMsg"></div></div>
+</div>
+
+<aside id="settings" class="hidden" role="dialog" aria-label="Settings">
+  <h2 data-i18n="s.title"></h2>
+  <p class="sub" data-i18n="s.sub"></p>
+  <div id="opts"></div>
+  <div class="grp"><label id="lblSetup" data-i18n="s.setup"></label>
+    <div class="seg" role="group" aria-labelledby="lblSetup">
+      <button id="btnRecentre" data-i18n="s.centre"></button>
+      <button id="btnRecal" data-i18n="s.recal"></button>
+    </div>
+    <p class="hint" data-i18n="s.centreHint"></p>
+  </div>
+  <div class="row" style="margin-top:18px;justify-content:flex-start"><button class="btn ghost" id="closeSettings" data-i18n="s.close"></button></div>
+  <p class="hint" data-i18n="s.shortcuts"></p>
+</aside>
+
+<div id="toast" class="hidden" role="status" aria-live="polite"></div>
+
+<script type="module">
+// =====================================================================
+// Zest — core utils: dom, storage, tokens, tween, audio
+// =====================================================================
+const $ = sel => document.querySelector(sel);
+const TAU = Math.PI * 2;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const now = () => performance.now();
+
+const COL = { bg: '#0A0B14', plum: '#272937', card: 'rgba(24,26,42,.94)', gold: '#e9d09b', goldDeep: '#c9a35c', cream: '#f8eedc', muted: '#c8bed6', rose: '#e88b9e', sage: '#5dbeb0', safe: '#72d5a3' };
+const SANS = '"Plus Jakarta Sans","Noto Sans JP","Hiragino Sans","Yu Gothic",Meiryo,"Helvetica Neue",Arial,system-ui,sans-serif';
+
+// ---------- storage (best-effort, never throws) ----------
+const STORE_KEY = 'zest.v1';
+function loadStore() {
+  try { const raw = localStorage.getItem(STORE_KEY); if (!raw) return {}; return JSON.parse(raw) || {}; }
+  catch (e) { return {}; }
+}
+function saveStore() { try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch (e) {} }
+const store = Object.assign({ onboarded: false, settings: {}, days: {} }, loadStore());
+store.days = store.days || {};
+
+const DEFAULT_SETTINGS = { control: 'hand', hand: 'either', pace: 'calm', sound: true, selfview: true, voiceFrenzy: true, browBonus: true, voicePrompts: true, faceJelly: true, lang: 'tr' };
+const SETTINGS = Object.assign({}, DEFAULT_SETTINGS, store.settings || {});
+
+// =====================================================================
+// Languages: Turkish (default), English, Japanese — mirrors Glimmer
+// =====================================================================
+const LANG_META = {
+  tr: { name: 'Türkçe', locale: 'tr-TR', speech: 'tr-TR', html: 'tr' },
+  en: { name: 'English', locale: 'en-GB', speech: 'en-GB', html: 'en-GB' },
+  ja: { name: '日本語', locale: 'ja-JP', speech: 'ja-JP', html: 'ja' },
+};
+const LANGS = {
+  en: {
+    eyebrow: 'A gentle balloon-popping game',
+    lede: 'Pop balloons, jellyfish and birds with a wave of your hand. Shout for a frenzy, raise your eyebrows for a bonus burst.',
+    begin: 'Begin', settings: 'Settings',
+    small1: "Please sit in a steady chair with your arms supported, and stop whenever you're tired.",
+    small2: 'Everything happens on this computer. The camera picture and microphone level are never saved or sent anywhere.',
+    'load.cam': 'Asking for your camera…', 'load.hand': 'Warming up tracking…',
+    's.title': 'Settings', 's.sub': 'Tune Zest to what feels comfortable.', 's.setup': 'Setup', 's.centre': 'Centre me', 's.recal': 'Recalibrate',
+    's.centreHint': '"Centre me" recentres on where your hand is now. Shortcut: C.', 's.close': 'Close', 's.shortcuts': 'Shortcuts: Space pauses, S opens settings.', 's.lang': 'Language',
+    'aria.gear': 'Settings', 'aria.status': 'Game status',
+    't.cam': "I couldn't reach the camera, so we'll play with the mouse for now.", 't.hand': "I couldn't reach hand tracking, so we've switched to the mouse.",
+    't.centred': 'Centred on your hand.', 't.nocentre': "I can't see a hand to centre on right now.",
+    'opt.control': 'Play with', 'opt.control.hand': 'Hand', 'opt.control.mouse': 'Mouse',
+    'opt.hand': 'Which hand', 'opt.hand.either': 'Either hand', 'opt.hand.left': 'Left', 'opt.hand.right': 'Right',
+    'opt.pace': 'Pace', 'opt.pace.calm': 'Calm', 'opt.pace.lively': 'Lively',
+    'opt.sound': 'Sound', 'opt.voicePrompts': 'Spoken directions', 'opt.selfview': 'Show camera view',
+    'opt.voiceFrenzy': 'Shout for a frenzy', 'opt.browBonus': 'Bonus pop (smile, mouth or turn)', 'opt.faceJelly': 'Shy jellyfish (mouth & head)',
+    'opt.lang': 'Language',
+    on: 'On', off: 'Off',
+    'theme.balloon': 'Balloons', 'theme.jellyfish': 'Jellyfish', 'theme.bird': 'Birds',
+    'hud.score': 'SCORE', 'hud.combo': 'x{n} combo', 'hud.frenzy': 'ZEST FRENZY!',
+    'hud.browHint': 'smile, open your mouth, or turn your head for a bonus burst', 'hud.mouthHint': 'open your mouth to say hello', 'hud.turnHint': 'turn your head to say hello',
+    'cal.title': 'Finding your hand', 'cal.hand': 'Lift your hand where the camera can see it', 'cal.ok': 'Lovely. Hold still for a moment.',
+    'cal.tip': 'Tip: good light on your hands helps a lot.', 'cal.skip': 'Skip',
+    'rest.title': 'Time for a little rest', 'done.title': 'Lovely session', stats: '{n} popped today, best combo x{c}',
+    'rest.keep': 'Keep playing', 'done.playAgain': 'Play again',
+    'say.beginIntro': 'Pop the balloons whenever you like. There is no rush and nothing to get wrong.',
+    'say.calibrate': 'Hold your hand up, wherever is comfortable for you.',
+    'say.playIntro': 'Lovely. Off you go, nice and slowly.',
+    'say.rest': 'Time for a little rest. Carry on whenever you feel ready.',
+    'say.done': "That's a lovely session. Well done.",
+    'say.levelJellyfish': "Lovely. Let's try the jellyfish now.", 'say.levelBird': 'Wonderful. Now the birds have arrived.', 'say.levelBalloon': 'Back to the balloons for a while.',
+    'say.shyMouth': 'A shy jellyfish has drifted in. Open your mouth to say hello.',
+    'say.shyTurn': 'A shy jellyfish has drifted in. Turn your head to say hello.',
+    'say.shyPop': 'Lovely. Hello back.',
+    'say.browBonus': 'A golden bonus has arrived. Smile, open your mouth, or turn your head to pop it.',
+    'say.browPop': 'Lovely! Bonus burst.',
+    'say.combo': n => `Lovely, ${n} in a row!`,
+    'say.ambient1': "You're doing beautifully.", 'say.ambient2': 'Take your time, there is no rush at all.',
+    'say.ambient3': "Lovely and steady, that's it.", 'say.ambient4': "I'm right here with you.",
+    'say.ambient5': 'Keep going, just as you like.', 'say.ambient6': "No rush at all, you're doing wonderfully.",
+    streak: n => `${n} day streak`,
+  },
+  tr: {
+    eyebrow: 'Nazik bir balon patlatma oyunu',
+    lede: 'Elinizi sallayarak balonları, denizanalarını ve kuşları patlatın. Çılgınlık için bağırın, bonus patlama için kaşlarınızı kaldırın.',
+    begin: 'Başla', settings: 'Ayarlar',
+    small1: 'Lütfen kolları destekli, sağlam bir sandalyede oturun ve yorulduğunuzda durun.',
+    small2: 'Her şey bu bilgisayarda gerçekleşir. Kamera görüntüsü ve mikrofon düzeyi hiçbir yere kaydedilmez veya gönderilmez.',
+    'load.cam': 'Kamera isteniyor…', 'load.hand': 'İzleme ısıtılıyor…',
+    's.title': 'Ayarlar', 's.sub': "Zest'i size rahat gelecek şekilde ayarlayın.", 's.setup': 'Kurulum', 's.centre': 'Beni ortala', 's.recal': 'Yeniden ayarla',
+    's.centreHint': '"Beni ortala", elinizin şu an bulunduğu yeri yeniden merkez yapar. Kısayol: C.', 's.close': 'Kapat', 's.shortcuts': 'Kısayollar: Boşluk duraklatır, S ayarları açar.', 's.lang': 'Dil',
+    'aria.gear': 'Ayarlar', 'aria.status': 'Oyun durumu',
+    't.cam': 'Kamerayı kullanamadım, o yüzden şimdilik fareyle oynayacağız.', 't.hand': 'El takibine ulaşamadım, o yüzden fareye geçtik.',
+    't.centred': 'Elinize göre ortalandı.', 't.nocentre': 'Şu an ortalayacak bir el göremiyorum.',
+    'opt.control': 'Şununla oynayın', 'opt.control.hand': 'El', 'opt.control.mouse': 'Fare',
+    'opt.hand': 'Hangi el', 'opt.hand.either': 'Fark etmez', 'opt.hand.left': 'Sol', 'opt.hand.right': 'Sağ',
+    'opt.pace': 'Hız', 'opt.pace.calm': 'Sakin', 'opt.pace.lively': 'Canlı',
+    'opt.sound': 'Ses', 'opt.voicePrompts': 'Sesli yönlendirme', 'opt.selfview': 'Kamera görüntüsünü göster',
+    'opt.voiceFrenzy': 'Çılgınlık için bağır', 'opt.browBonus': 'Bonus patlatma (gülümseme, ağız ya da baş çevirme)', 'opt.faceJelly': 'Utangaç denizanası (ağız ve baş)',
+    'opt.lang': 'Dil',
+    on: 'Açık', off: 'Kapalı',
+    'theme.balloon': 'Balonlar', 'theme.jellyfish': 'Denizanaları', 'theme.bird': 'Kuşlar',
+    'hud.score': 'PUAN', 'hud.combo': 'x{n} kombo', 'hud.frenzy': 'ZEST ÇILGINLIĞI!',
+    'hud.browHint': 'bonus patlama için gülümseyin, ağzınızı açın ya da başınızı çevirin', 'hud.mouthHint': 'merhaba demek için ağzınızı açın', 'hud.turnHint': 'merhaba demek için başınızı çevirin',
+    'cal.title': 'Sizi buluyorum', 'cal.hand': 'Elinizi kameranın görebileceği yere kaldırın', 'cal.ok': 'Güzel. Bir an kıpırdamadan durun.',
+    'cal.tip': 'İpucu: ellerinizdeki iyi ışık çok yardımcı olur.', 'cal.skip': 'Atla',
+    'rest.title': 'Kısa bir mola', 'done.title': 'Güzel bir oturum', stats: 'Bugün {n} patlatıldı, en iyi kombo x{c}',
+    'rest.keep': 'Oynamaya devam et', 'done.playAgain': 'Tekrar oyna',
+    'say.beginIntro': 'İstediğiniz zaman balonları patlatın. Acele yok ve yanlış bir şey yok.',
+    'say.calibrate': 'Elinizi rahat olduğunuz bir yerde kaldırın.',
+    'say.playIntro': 'Güzel. Hadi başlayalım, yavaşça.',
+    'say.rest': 'Kısa bir mola zamanı. Hazır olduğunuzda devam edin.',
+    'say.done': 'Güzel bir oturumdu. Aferin size.',
+    'say.levelJellyfish': 'Güzel. Şimdi denizanalarını deneyelim.', 'say.levelBird': 'Harika. Şimdi kuşlar geldi.', 'say.levelBalloon': 'Bir süreliğine balonlara dönüyoruz.',
+    'say.shyMouth': 'Utangaç bir denizanası köşeden süzüldü. Merhaba demek için ağzınızı açın.',
+    'say.shyTurn': 'Utangaç bir denizanası köşeden süzüldü. Merhaba demek için başınızı çevirin.',
+    'say.shyPop': 'Güzel. Merhaba sana da.',
+    'say.browBonus': 'Altın bir bonus geldi. Patlatmak için gülümseyin, ağzınızı açın ya da başınızı çevirin.',
+    'say.browPop': 'Harika! Bonus patlaması.',
+    'say.combo': n => `Harika, üst üste ${n}!`,
+    'say.ambient1': 'Çok güzel gidiyorsunuz.', 'say.ambient2': 'Acele etmeyin, hiç acele yok.',
+    'say.ambient3': 'Güzel ve sakin, aynen böyle.', 'say.ambient4': 'Buradayım, yanınızdayım.',
+    'say.ambient5': 'Devam edin, kendi hızınızda.', 'say.ambient6': 'Acele yok, harika gidiyorsunuz.',
+    streak: n => `${n} gün üst üste`,
+  },
+  ja: {
+    eyebrow: 'やさしい風船割りゲーム',
+    lede: '手を振って風船やクラゲ、鳥を割りましょう。大きな声でフィーバー、眉を上げてボーナスを。',
+    begin: 'はじめる', settings: '設定',
+    small1: '腕を支えた安定した椅子に座り、疲れたらいつでも休んでください。',
+    small2: 'すべてこのコンピューター内で行われます。カメラの映像とマイクの音量は、どこにも保存・送信されません。',
+    'load.cam': 'カメラを準備しています…', 'load.hand': 'トラッキングを準備しています…',
+    's.title': '設定', 's.sub': 'Zestを心地よく調整しましょう。', 's.setup': 'セットアップ', 's.centre': '今の位置を中心に', 's.recal': '再調整',
+    's.centreHint': '「今の位置を中心に」は、今の手の位置を中心にします。ショートカット：C', 's.close': '閉じる', 's.shortcuts': 'ショートカット：スペースで一時停止、Sで設定を開きます。', 's.lang': '言語',
+    'aria.gear': '設定', 'aria.status': 'ゲームの状況',
+    't.cam': 'カメラを使えなかったので、今はマウスで遊びます。', 't.hand': '手のトラッキングに届かなかったので、マウスに切り替えました。',
+    't.centred': '手の位置に合わせて中心にしました。', 't.nocentre': '今は中心に合わせる手が見えません。',
+    'opt.control': '操作方法', 'opt.control.hand': '手', 'opt.control.mouse': 'マウス',
+    'opt.hand': '使う手', 'opt.hand.either': 'どちらでも', 'opt.hand.left': '左', 'opt.hand.right': '右',
+    'opt.pace': 'ペース', 'opt.pace.calm': '穏やか', 'opt.pace.lively': '活発',
+    'opt.sound': 'サウンド', 'opt.voicePrompts': '音声ガイド', 'opt.selfview': 'カメラ映像を表示',
+    'opt.voiceFrenzy': '大声でフィーバー', 'opt.browBonus': 'ボーナス（笑顔・口・首振り）', 'opt.faceJelly': '恥ずかしがりなクラゲ（口と頭）',
+    'opt.lang': '言語',
+    on: 'オン', off: 'オフ',
+    'theme.balloon': '風船', 'theme.jellyfish': 'クラゲ', 'theme.bird': '鳥',
+    'hud.score': 'スコア', 'hud.combo': 'x{n} コンボ', 'hud.frenzy': 'ゼストフィーバー！',
+    'hud.browHint': 'ボーナスを割るには、笑う、口を開ける、頭を向けるのいずれかをしてください', 'hud.mouthHint': 'こんにちはと言うために口を開けてください', 'hud.turnHint': 'こんにちはと言うために頭を向けてください',
+    'cal.title': 'あなたを探しています', 'cal.hand': 'カメラに映るように手を上げてください', 'cal.ok': 'いいですね。少しじっとしていてください。',
+    'cal.tip': 'ヒント：手に明るい光が当たるととても分かりやすくなります。', 'cal.skip': 'スキップ',
+    'rest.title': '少し休憩しましょう', 'done.title': 'すてきなセッションでした', stats: '今日は{n}個割れました、ベストコンボ x{c}',
+    'rest.keep': '続けて遊ぶ', 'done.playAgain': 'もう一度遊ぶ',
+    'say.beginIntro': '好きなときに風船を割ってください。急がなくて大丈夫、間違いもありません。',
+    'say.calibrate': '心地よい位置で手を上げてください。',
+    'say.playIntro': 'いいですね。ゆっくり始めましょう。',
+    'say.rest': '少し休憩の時間です。準備ができたら続けましょう。',
+    'say.done': 'すてきなセッションでした。よくできました。',
+    'say.levelJellyfish': 'いいですね。次はクラゲに挑戦しましょう。', 'say.levelBird': 'すばらしい。鳥たちがやってきました。', 'say.levelBalloon': 'しばらく風船に戻ります。',
+    'say.shyMouth': '恥ずかしがりなクラゲが漂ってきました。こんにちはと言うために口を開けてください。',
+    'say.shyTurn': '恥ずかしがりなクラゲが漂ってきました。こんにちはと言うために頭を向けてください。',
+    'say.shyPop': 'いいですね。こんにちは。',
+    'say.browBonus': 'ボーナスが現れました。割るには、笑うか、口を開けるか、頭を向けてください。',
+    'say.browPop': 'いいですね！ボーナス達成。',
+    'say.combo': n => `いいですね、${n}連続です！`,
+    'say.ambient1': 'とても上手にできています。', 'say.ambient2': '急がなくて大丈夫ですよ。',
+    'say.ambient3': 'いい調子です、そのままで。', 'say.ambient4': 'ずっとそばにいますよ。',
+    'say.ambient5': 'ご自分のペースで続けてください。', 'say.ambient6': '急がなくて大丈夫、とても上手です。',
+    streak: n => `${n}日連続`,
+  },
+};
+if (!LANGS[SETTINGS.lang]) SETTINGS.lang = 'tr';
+function t(key, v) {
+  let s = (LANGS[SETTINGS.lang] || LANGS.tr)[key]; if (s === undefined) s = LANGS.en[key]; if (s === undefined) return key;
+  if (typeof s === 'function') return s(...(Array.isArray(v) ? v : [v]));
+  if (typeof s === 'string' && v && typeof v === 'object') return s.replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m));
+  return s;
+}
+const LM = () => LANG_META[SETTINGS.lang] || LANG_META.tr;
+function setSetting(k, v) {
+  SETTINGS[k] = v; store.settings = SETTINGS; saveStore();
+  if (k === 'lang') { voiceObj = null; try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (e) {} applyLang(); }
+}
+// pushes the current language into every piece of static (DOM) text; canvas text calls t() directly each frame
+function applyLang() {
+  const lm = LM(); document.documentElement.lang = lm.html;
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-aria]').forEach(el => { const v = t(el.dataset.i18nAria); el.setAttribute('aria-label', v); el.title = v; });
+  $('#welcomeLede').textContent = t('lede');
+  $('#stage').setAttribute('aria-label', t('aria.status'));
+  $('#settings').setAttribute('aria-label', t('s.title'));
+  const sw = $('#langSw'); sw.innerHTML = '';
+  for (const k of Object.keys(LANG_META)) {
+    const b = document.createElement('button'); b.type = 'button'; b.textContent = LANG_META[k].name; b.lang = LANG_META[k].html; b.dataset.lang = k;
+    b.setAttribute('aria-pressed', k === SETTINGS.lang); if (k === SETTINGS.lang) b.className = 'on';
+    b.onclick = () => setSetting('lang', k); sw.appendChild(b);
+  }
+  const n = currentStreak(); $('#streak').textContent = n > 0 ? t('streak', n) : '';
+  if (typeof renderOpts === 'function' && !$('#settings').classList.contains('hidden')) renderOpts();
+}
+
+// ---------- spoken directions: short, gentle, matches the chosen language, only after a user gesture ----------
+// Chrome's speech engine is unreliable over a long session: speaking right on top of a cancel() can
+// silently drop the line, and the whole engine can quietly stall after ~15s of being open. So speech
+// here is queued rather than cut off on every call, and nudged awake on a timer rather than relied on
+// to keep going by itself.
+let voiceObj = null, voiceLang = '';
+const SPEECH_Q = [];
+let speechBusy = false, lastSpeechAt = -1e9;
+function pickVoice() {
+  if (!window.speechSynthesis) return;
+  const vs = speechSynthesis.getVoices(), sp = LM().speech, pre = sp.slice(0, 2);
+  if (!vs.length || (voiceObj && voiceLang === sp)) return;
+  voiceLang = sp;
+  voiceObj = vs.find(v2 => v2.lang.replace('_', '-').toLowerCase() === sp.toLowerCase() && /female|serena|kate|martha|fiona|stephanie|yelda|kyoko|o-ren|nanami|filiz/i.test(v2.name))
+    || vs.find(v2 => v2.lang.replace('_', '-').toLowerCase() === sp.toLowerCase())
+    || vs.find(v2 => v2.lang.toLowerCase().startsWith(pre)) || null;
+}
+function flushSpeech() {
+  if (speechBusy || !SPEECH_Q.length || !window.speechSynthesis) return;
+  speakNow(SPEECH_Q.shift());
+}
+function speakNow(text) {
+  if (!window.speechSynthesis) { speechBusy = false; return; }
+  try {
+    pickVoice();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = LM().speech; u.rate = 0.9; u.pitch = 1.02; u.volume = 0.9; if (voiceObj) u.voice = voiceObj;
+    speechBusy = true;
+    const done = () => { speechBusy = false; flushSpeech(); };
+    u.onend = done; u.onerror = done;
+    window.speechSynthesis.speak(u);
+    // a safety net: if 'end' never fires (it doesn't always, on every browser), the queue must not jam forever
+    setTimeout(() => { if (speechBusy) done(); }, Math.max(2600, text.length * 110));
+  } catch (e) { speechBusy = false; }
+}
+// opts.interrupt: for the handful of lines that should cut in over anything already playing
+// (mode changes) — everything else (prompts, praise, ambient chat) waits its turn instead of
+// chopping off whatever she's mid-way through hearing
+function say(key, v, opts = {}) {
+  if (!SETTINGS.voicePrompts || !window.speechSynthesis) return;
+  const text = t(key, v);
+  lastSpeechAt = now();
+  if (opts.interrupt) {
+    SPEECH_Q.length = 0;
+    try { window.speechSynthesis.cancel(); } catch (e) {}
+    speechBusy = false;
+    setTimeout(() => speakNow(text), 40); // a beat after cancel() — speaking right on top of it can vanish silently
+  } else {
+    SPEECH_Q.push(text);
+    if (SPEECH_Q.length > 2) SPEECH_Q.splice(0, SPEECH_Q.length - 2); // never a growing backlog of stale lines
+    flushSpeech();
+  }
+}
+try { window.speechSynthesis && (speechSynthesis.onvoiceschanged = () => { voiceObj = null; }); } catch (e) {}
+// Chrome can silently stop finishing utterances after the tab has been open a while; nudging the
+// engine like this is the standard workaround and is harmless when nothing is speaking
+if (window.speechSynthesis) {
+  setInterval(() => {
+    try { if (window.speechSynthesis.speaking) { window.speechSynthesis.pause(); window.speechSynthesis.resume(); } } catch (e) {}
+  }, 9000);
+}
+
+function todayKey() { const d = new Date(); return d.toISOString().slice(0, 10); }
+const T = { slices: 0, bestCombo: 0, frenzies: 0, browBursts: 0, bombsTouched: 0 };
+function bumpDay() { const k = todayKey(); store.days[k] = (store.days[k] || 0) + 1; saveStore(); }
+function currentStreak() {
+  let n = 0, d = new Date();
+  for (;;) { const k = d.toISOString().slice(0, 10); if (store.days[k]) { n++; d.setDate(d.getDate() - 1); } else break; }
+  return n;
+}
+
+// ---------- tiny tween engine ----------
+const TWEENS = [];
+function tween(from, to, dur, onUpdate, ease = t => t, onDone) { TWEENS.push({ t0: now(), dur, from, to, onUpdate, ease, onDone, done: false }); }
+function updateTweens() {
+  const t = now();
+  for (let i = TWEENS.length - 1; i >= 0; i--) {
+    const tw = TWEENS[i]; const p = clamp((t - tw.t0) / tw.dur, 0, 1); const e = tw.ease(p);
+    tw.onUpdate(lerp(tw.from, tw.to, e));
+    if (p >= 1 && !tw.done) { tw.done = true; tw.onDone && tw.onDone(); TWEENS.splice(i, 1); }
+  }
+}
+const easeOutBack = t => 1 + 2.7 * Math.pow(t - 1, 3) + 1.7 * Math.pow(t - 1, 2);
+const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
+
+// ---------- WebAudio: short soft tones, no samples ----------
+const Snd = (() => {
+  let ctx = null;
+  function ac() { if (!ctx) { const AC = window.AudioContext || window.webkitAudioContext; ctx = new AC(); } return ctx; }
+  function tone(freq, dur = .12, type = 'sine', gain = .09, delay = 0) {
+    if (!SETTINGS.sound) return;
+    try {
+      const c = ac(); if (c.state === 'suspended') c.resume().catch(() => {});
+      const o = c.createOscillator(), g = c.createGain(); o.type = type; o.frequency.value = freq;
+      const t0 = c.currentTime + delay;
+      g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(gain, t0 + .012); g.gain.exponentialRampToValueAtTime(.001, t0 + dur);
+      o.connect(g); g.connect(c.destination); o.start(t0); o.stop(t0 + dur + .02);
+    } catch (e) {}
+  }
+  return {
+    slice: () => tone(520 + Math.random() * 260, .1, 'triangle', .08),
+    bomb: () => tone(110, .22, 'sine', .07),
+    combo: n => tone(440 + Math.min(n, 10) * 40, .09, 'sine', .07),
+    fanfare: () => { [523, 659, 784, 1047].forEach((f, i) => tone(f, .22, 'triangle', .075, i * .09)); },
+    frenzy: () => { [392, 494, 587, 784].forEach((f, i) => tone(f, .28, 'sawtooth', .05, i * .05)); },
+    pop: () => tone(880, .08, 'sine', .07),
+  };
+})();
+
+// =====================================================================
+// Zest — game state: fruit/bomb spawning, physics, scoring, no fail state
+// =====================================================================
+const FRUITS = [
+  { id: 'apple', r: 92, col: '#e0355f', col2: '#b81f45' },
+  { id: 'orange', r: 90, col: '#f2a63d', col2: '#c97f1f' },
+  { id: 'kiwi', r: 86, col: '#8fd93f', col2: '#5fa823' },
+  { id: 'berry', r: 82, col: '#7a5cf0', col2: '#5138b8' },
+  { id: 'melon', r: 96, col: '#f5e26b', col2: '#c9b13e' },
+];
+const GOLD_FRUIT = { id: 'zest', r: 98, col: '#ffd76a', col2: '#e9a63c' };
+const BOMB_R = 86; // the soft grey balloon has no .def, so its hit/visual radius lives here
+
+// three gentle levels, same forgiving physics throughout — only the scenery changes,
+// never the speed or precision needed, per the Parkinson's-friendly design brief
+const JELLYFISH = [
+  { id: 'moon', r: 88, col: '#bfeaf2', col2: '#6fb8cc' },
+  { id: 'rose', r: 84, col: '#f3b8d6', col2: '#c96f9e' },
+  { id: 'amber', r: 90, col: '#ffd9a0', col2: '#e0a35c' },
+  { id: 'violet', r: 86, col: '#cdb6f5', col2: '#9470d6' },
+];
+const GOLD_JELLY = { id: 'pearl', r: 98, col: '#fff3d6', col2: '#f0d79a' };
+// two shy jellyfish that drift in from the top corners during the jellyfish level and
+// can only be said hello to with a face gesture, never a touch — one wants an open mouth,
+// the other a turned head, each its own gentle exercise with its own spoken cue
+const FACE_JELLY = {
+  mouth: { id: 'whisper', r: 84, col: '#e8e6f5', col2: '#b8b4d6' },
+  turn: { id: 'echo', r: 84, col: '#d6ecf0', col2: '#8fb8c9' },
+};
+const BIRDS = [
+  { id: 'robin', r: 80, col: '#e0789a', col2: '#b8456f' },
+  { id: 'bluebird', r: 78, col: '#5dade2', col2: '#2e6da4' },
+  { id: 'canary', r: 82, col: '#f5e26b', col2: '#c9b13e' },
+  { id: 'dove', r: 84, col: '#d9d6e3', col2: '#a7a2b8' },
+];
+const GOLD_BIRD = { id: 'phoenix', r: 98, col: '#ffb15e', col2: '#e8793c' };
+const THEMES = {
+  balloon: { label: 'Balloons', species: FRUITS, gold: GOLD_FRUIT },
+  jellyfish: { label: 'Jellyfish', species: JELLYFISH, gold: GOLD_JELLY },
+  bird: { label: 'Birds', species: BIRDS, gold: GOLD_BIRD },
+};
+const LEVELS = ['balloon', 'jellyfish', 'bird'];
+const LEVEL_TARGET = 10; // pops before the next level quietly begins — never timed, never a test
+const LEVEL_SAY_KEY = { balloon: 'say.levelBalloon', jellyfish: 'say.levelJellyfish', bird: 'say.levelBird' };
+function themeLabel() { return t('theme.' + LEVELS[S.level]); }
+
+// balloons drift gently upward and sway, rather than being thrown — much slower and far
+// more forgiving than the old parabolic toss, per feedback that the fruit were too demanding
+const PACE = {
+  calm: { riseMin: 30, riseMax: 46, spawnMin: 1.7, spawnMax: 2.6, bombChance: .05, goldChance: .045 },
+  lively: { riseMin: 46, riseMax: 64, spawnMin: 1.1, spawnMax: 1.8, bombChance: .08, goldChance: .06 },
+};
+
+let BW = 960, BH = 600; // board units, set by layout()
+const S = {
+  mode: 'menu', // menu | loading | calibrate | play | rest | done
+  hold: false,
+  camOn: false,
+  mic: false,
+  models: { hand: false, face: false },
+  pointer: null, // {x,y} board units, or null if not seen
+  combo: 0,
+  comboTimer: 0,
+  score: 0,
+  frenzy: 0, // seconds remaining
+  sessionStart: 0,
+  lastActivity: 0,
+  _spokenMode: null,
+  _spokenPlayIntro: false,
+  level: 0,
+  levelPops: 0,
+};
+let objects = []; // active fruit/bomb on screen
+let particles = [];
+let spawnTimer = 0.6;
+let goldOnScreen = false;
+let faceJellyOnScreen = false;
+let faceSpawnTimer = 16; // the first shy jellyfish arrives fairly soon so she meets the feature
+
+// ---------- directive overlay: a big translucent illustration + spoken line, shown once when a new
+// kind of gesture is asked for, then fades away on its own (or the moment the gesture succeeds) ----------
+const DIRECTIVE = { active: false, icon: null, key: null, t: 0, dur: 4.2 };
+function showDirective(icon, key) { DIRECTIVE.active = true; DIRECTIVE.icon = icon; DIRECTIVE.key = key; DIRECTIVE.t = 0; }
+function dismissDirective(icon) { if (DIRECTIVE.active && (!icon || DIRECTIVE.icon === icon)) DIRECTIVE.active = false; }
+function updateDirective(dt) { if (DIRECTIVE.active) { DIRECTIVE.t += dt; if (DIRECTIVE.t > DIRECTIVE.dur) DIRECTIVE.active = false; } }
+
+// ---------- ambient voice: so the game keeps her company rather than only speaking at big moments —
+// a gentle line every so often, but only once things have been quiet a while, never on top of anything else ----------
+const AMBIENT_KEYS = ['say.ambient1', 'say.ambient2', 'say.ambient3', 'say.ambient4', 'say.ambient5', 'say.ambient6'];
+let ambientTimer = 18, lastAmbientIdx = -1;
+function updateAmbientVoice(dt) {
+  if (!SETTINGS.voicePrompts || S.mode !== 'play') return;
+  if (now() - lastSpeechAt < 12000) { ambientTimer = Math.max(ambientTimer, 10); return; } // something else just spoke — don't pile on
+  ambientTimer -= dt;
+  if (ambientTimer <= 0) {
+    ambientTimer = 22 + Math.random() * 16; // every 22-38s or so, never on a strict metronome
+    let idx; do { idx = (Math.random() * AMBIENT_KEYS.length) | 0; } while (idx === lastAmbientIdx && AMBIENT_KEYS.length > 1);
+    lastAmbientIdx = idx;
+    say(AMBIENT_KEYS[idx]);
+  }
+}
+
+function pace() { return PACE[SETTINGS.pace] || PACE.calm; }
+function theme() { return THEMES[LEVELS[S.level]]; }
+
+function resetWorld() {
+  objects = []; particles = []; spawnTimer = .6; goldOnScreen = false;
+  faceJellyOnScreen = false; faceSpawnTimer = 16; DIRECTIVE.active = false;
+  jawBase.v = null; jawBase.samples = []; yawBase.v = null; yawBase.samples = []; smileBase.v = null; smileBase.samples = [];
+  S.combo = 0; S.comboTimer = 0; S.score = 0; S.frenzy = 0;
+  S.level = 0; S.levelPops = 0;
+  ambientTimer = 18; lastAmbientIdx = -1;
+}
+
+// a pop (not a bomb) nudges her toward the next level; never timed, never a test
+function advanceLevelProgress() {
+  S.levelPops++;
+  if (S.levelPops < LEVEL_TARGET) return;
+  S.levelPops = 0;
+  S.level = (S.level + 1) % LEVELS.length;
+  const key = LEVELS[S.level];
+  toast(themeLabel(), 2400);
+  say(LEVEL_SAY_KEY[key]);
+}
+
+function spawnOne(forceType) {
+  const p = pace();
+  const key = LEVELS[S.level], th = THEMES[key];
+  let type = forceType;
+  if (!type) {
+    if (!goldOnScreen && Math.random() < p.goldChance) type = 'gold';
+    else if (Math.random() < p.bombChance) type = 'bomb';
+    else type = th.species[(Math.random() * th.species.length) | 0].id;
+  }
+  if (type === 'gold') {
+    goldOnScreen = true;
+    if (SETTINGS.browBonus) { showDirective('bonus', 'hud.browHint'); say('say.browBonus'); }
+  }
+  const def = type === 'bomb' ? null : (type === 'gold' ? th.gold : th.species.find(f => f.id === type) || th.species[0]);
+  const speed = p.riseMin + Math.random() * (p.riseMax - p.riseMin);
+  let x, y, vx = 0, vy = -speed;
+  if (Math.random() < .55) {
+    // rises from the bottom, as before — still the usual way in, so the game keeps its familiar feel
+    x = BW * (.1 + Math.random() * .8); y = BH + 100;
+  } else {
+    // drifts in diagonally from a corner instead, so she isn't always reaching for the same spot
+    const d = speed * .74;
+    const corner = ['tl', 'tr', 'bl', 'br'][(Math.random() * 4) | 0];
+    const fromLeft = corner === 'tl' || corner === 'bl', fromTop = corner === 'tl' || corner === 'tr';
+    x = fromLeft ? -90 : BW + 90; y = fromTop ? -90 : BH + 90;
+    vx = (fromLeft ? 1 : -1) * d; vy = (fromTop ? 1 : -1) * d;
+  }
+  objects.push({
+    id: Math.random().toString(36).slice(2), type, def, theme: key,
+    x, y, baseX: x, vy, vx,
+    swayAmp: 20 + Math.random() * 28, swayFreq: .5 + Math.random() * .35, swayPhase: Math.random() * TAU,
+    rot: 0, spin: 0, wingPhase: Math.random() * TAU,
+    sliced: false, age: 0, browProg: 0,
+  });
+}
+
+function burst(x, y, col, n = 16, spd = 260) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * TAU, s = spd * (.4 + Math.random() * .8);
+    particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 80, life: .5 + Math.random() * .35, age: 0, col, r: 3 + Math.random() * 4 });
+  }
+}
+
+function awardScore(n) {
+  S.score += n; S.combo++; S.comboTimer = .9; T.slices++; if (S.combo > T.bestCombo) T.bestCombo = S.combo;
+  Snd.combo(S.combo);
+  if (S.combo > 0 && S.combo % 3 === 0) say('say.combo', S.combo); // a little spoken praise along the way, not just at the big moments
+}
+
+// called from input each frame with the most recent pointer trail segment (board units)
+// no speed requirement at all: a slow, trembling pass still pops the balloon
+function trySlice(ax, ay, bx, by, speed) {
+  if (S.mode !== 'play') return;
+  for (const o of objects) {
+    if (o.sliced || o.age < .05 || o.type === 'facemouth' || o.type === 'faceturn') continue;
+    const rad = (o.def ? o.def.r : BOMB_R) + 16;
+    const d = distToSeg(o.x, o.y, ax, ay, bx, by);
+    if (d < rad) resolveHit(o);
+  }
+}
+// just resting the pointer on a balloon also pops it — no swipe needed at all
+// (the shy jellyfish are the one exception: only a face gesture says hello to those)
+function checkTouchPop() {
+  if (S.mode !== 'play' || !S.pointer) return;
+  for (const o of objects) {
+    if (o.sliced || o.age < .05 || o.type === 'facemouth' || o.type === 'faceturn') continue;
+    const rad = (o.def ? o.def.r : BOMB_R) + 16;
+    const d = Math.hypot(o.x - S.pointer.x, o.y - S.pointer.y);
+    if (d < rad) resolveHit(o);
+  }
+}
+function distToSeg(px, py, ax, ay, bx, by) {
+  const dx = bx - ax, dy = by - ay, len2 = dx * dx + dy * dy;
+  let t = len2 ? ((px - ax) * dx + (py - ay) * dy) / len2 : 0; t = clamp(t, 0, 1);
+  const cx = ax + dx * t, cy = ay + dy * t; return Math.hypot(px - cx, py - cy);
+}
+
+function resolveHit(o) {
+  o.sliced = true;
+  if (o.type === 'bomb') {
+    T.bombsTouched++; burst(o.x, o.y, '#8a8a96', 10, 140); Snd.bomb(); S.combo = 0; S.comboTimer = 0;
+    S.lastGentleNote = 'bomb';
+  } else if (o.type === 'gold') {
+    goldOnScreen = false; burst(o.x, o.y, o.def.col, 26, 320); Snd.pop(); awardScore(40);
+    S.lastGentleNote = 'gold'; advanceLevelProgress();
+  } else {
+    burst(o.x, o.y, o.def.col, 16, 240); Snd.slice(); awardScore(10); advanceLevelProgress();
+  }
+  bumpDay();
+}
+
+function triggerFrenzy() {
+  if (S.frenzy > 0) return;
+  S.frenzy = 4.2; T.frenzies++; Snd.frenzy();
+  for (let i = 0; i < 6; i++) setTimeout(() => S.mode === 'play' && spawnOne(), i * 180);
+}
+
+function popGolden() {
+  const g = objects.find(o => o.type === 'gold' && !o.sliced);
+  if (!g) return false;
+  g.sliced = true; goldOnScreen = false; T.browBursts++;
+  dismissDirective('bonus'); say('say.browPop');
+  burst(g.x, g.y, g.def.col, 30, 360); Snd.fanfare(); awardScore(60);
+  S.lastGentleNote = 'brows'; advanceLevelProgress();
+  for (let i = 0; i < 5; i++) { const a = i / 5 * TAU; burst(g.x + Math.cos(a) * 30, g.y + Math.sin(a) * 30, g.def.col2, 8, 200); }
+  return true;
+}
+
+function updateWorld(dt) {
+  const p = pace();
+  if (S.frenzy > 0) { S.frenzy = Math.max(0, S.frenzy - dt); }
+  spawnTimer -= dt * (S.frenzy > 0 ? 2.2 : 1);
+  if (spawnTimer <= 0) {
+    spawnOne();
+    const mul = S.frenzy > 0 ? .45 : 1;
+    spawnTimer = (p.spawnMin + Math.random() * (p.spawnMax - p.spawnMin)) * mul;
+  }
+  if (S.comboTimer > 0) { S.comboTimer -= dt; if (S.comboTimer <= 0) S.combo = 0; }
+  checkTouchPop();
+  for (let i = objects.length - 1; i >= 0; i--) {
+    const o = objects[i]; o.age += dt;
+    o.y += o.vy * dt;
+    if (o.vx) o.baseX += o.vx * dt; // items drifting in from a corner move sideways too, not just straight up
+    o.x = o.baseX + Math.sin(o.age * o.swayFreq + o.swayPhase) * o.swayAmp;
+    o.rot = Math.sin(o.age * .5 + o.swayPhase) * .14;
+    if (o.sliced && o.age > .12) { objects.splice(i, 1); continue; }
+    const r = o.def ? o.def.r : BOMB_R, m = 90;
+    // items can now leave by any edge, since they can enter from any corner, not just rise off the top
+    const off = o.y + r < -m || o.y - r > BH + m || o.x + r < -m || o.x - r > BW + m;
+    if (o.type === 'facemouth' || o.type === 'faceturn') {
+      if (off) { faceJellyOnScreen = false; objects.splice(i, 1); } // drifts off, quietly, never a fail
+      continue;
+    }
+    if (off) { if (o.type === 'gold') goldOnScreen = false; objects.splice(i, 1); }
+  }
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const pt = particles[i]; pt.age += dt; if (pt.age >= pt.life) { particles.splice(i, 1); continue; }
+    pt.vy += 520 * dt; pt.x += pt.vx * dt; pt.y += pt.vy * dt;
+  }
+}
+
+// =====================================================================
+// Zest — camera, MediaPipe (hand + face), mic, pointer trail, calibration
+// =====================================================================
+const MP_VER = '0.10.21';
+const MP_BASE = window.ZEST_MP_BASE || `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VER}`;
+const MODEL_URL = window.ZEST_MODEL_BASE || 'https://storage.googleapis.com/mediapipe-models';
+const MODELS = {
+  hand: `${MODEL_URL}/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task`,
+  face: `${MODEL_URL}/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
+};
+const video = $('#cam');
+let MP = null, fileset = null, handLM = null, faceLM = null, lastVT = -1, phase = 0;
+
+async function startCamera() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('This browser cannot reach the camera.');
+  const stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 30 }, facingMode: 'user' }, audio: false });
+  video.srcObject = stream; await video.play(); S.camOn = true;
+}
+function stopCamera() { try { video.srcObject && video.srcObject.getTracks().forEach(t => t.stop()); } catch (e) {} video.srcObject = null; S.camOn = false; }
+
+async function ensureMP() {
+  if (MP) return;
+  MP = await import(`${MP_BASE}/vision_bundle.mjs`);
+  fileset = await MP.FilesetResolver.forVisionTasks(`${MP_BASE}/wasm`);
+}
+async function makeLM(cls, opts) {
+  try { return await cls.createFromOptions(fileset, { ...opts, baseOptions: { ...opts.baseOptions, delegate: 'GPU' } }); }
+  catch (e) { return await cls.createFromOptions(fileset, { ...opts, baseOptions: { ...opts.baseOptions, delegate: 'CPU' } }); }
+}
+async function loadModels(setMsg) {
+  await ensureMP();
+  const tasks = [];
+  if (!handLM) { setMsg && setMsg('Warming up hand tracking...'); tasks.push(makeLM(MP.HandLandmarker, { baseOptions: { modelAssetPath: MODELS.hand }, runningMode: 'VIDEO', numHands: 2 }).then(m => { handLM = m; S.models.hand = true; }).catch(e => console.warn('hand model', e))); }
+  if (!faceLM) { tasks.push(makeLM(MP.FaceLandmarker, { baseOptions: { modelAssetPath: MODELS.face }, runningMode: 'VIDEO', numFaces: 1, outputFaceBlendshapes: true }).then(m => { faceLM = m; S.models.face = true; }).catch(e => console.warn('face model', e))); }
+  await Promise.all(tasks);
+}
+
+// ---------- microphone: loudness only, never recorded or played back ----------
+const MIC = { on: false, ctx: null, an: null, buf: null, stream: null, db: -90, sm: -90 };
+async function startMic() {
+  if (MIC.on) return true;
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('no mic api');
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: false }, video: false });
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext; const ctx = new AC();
+    if (ctx.state === 'suspended') await ctx.resume().catch(() => {});
+    const src = ctx.createMediaStreamSource(stream), an = ctx.createAnalyser(); an.fftSize = 1024; src.connect(an);
+    Object.assign(MIC, { on: true, ctx, an, buf: new Float32Array(an.fftSize), stream, db: -90, sm: -90 });
+    S.mic = true; return true;
+  } catch (e) { stream.getTracks().forEach(t => t.stop()); throw e; }
+}
+function stopMic() {
+  try { MIC.stream && MIC.stream.getTracks().forEach(t => t.stop()); } catch (e) {}
+  try { MIC.ctx && MIC.ctx.close(); } catch (e) {}
+  Object.assign(MIC, { on: false, ctx: null, an: null, buf: null, stream: null, db: -90, sm: -90 }); S.mic = false;
+}
+let voiceHold = 0, voiceCooldown = 0;
+function readMic(dt) {
+  if (MIC.on && MIC.an) {
+    MIC.an.getFloatTimeDomainData(MIC.buf);
+    let e = 0; for (let i = 0; i < MIC.buf.length; i++) e += MIC.buf[i] * MIC.buf[i];
+    MIC.db = 20 * Math.log10(Math.sqrt(e / MIC.buf.length) + 1e-6);
+    const a = MIC.db > MIC.sm ? .5 : .08, k = 1 - Math.pow(1 - a, Math.max(dt, .001) * 60);
+    MIC.sm += (MIC.db - MIC.sm) * k;
+  }
+  voiceCooldown = Math.max(0, voiceCooldown - dt);
+  if (S.mode === 'play' && SETTINGS.voiceFrenzy && MIC.on) {
+    if (MIC.sm > -22) voiceHold += dt; else voiceHold = Math.max(0, voiceHold - dt * 1.5);
+    if (voiceHold >= 1.1 && voiceCooldown <= 0 && S.frenzy <= 0) { triggerFrenzy(); voiceCooldown = 7; voiceHold = 0; }
+  }
+}
+
+// ---------- pointer: mirrored index fingertip, mapped via a calibrated centre ----------
+const REACH = .40;
+const CAL = { ok: 0, t: 0, cx: .5, cy: .48, done: false };
+const H = { lm: null, lastSeen: -1e9, side: null };
+const F = { lm: null, lastSeen: -1e9, blend: {} };
+const smileBase = { v: null, samples: [] };
+const jawBase = { v: null, samples: [] };
+const yawBase = { v: null, samples: [] };
+// head yaw estimate, relative to straight-ahead: positive is turned to her right
+function faceYaw() {
+  if (!F.lm) return null;
+  const l = F.lm[234], r = F.lm[454], nose = F.lm[1];
+  if (!l || !r || !nose) return null;
+  const faceW = Math.abs(r.x - l.x) || .2;
+  return -(nose.x - (l.x + r.x) / 2) / faceW;
+}
+const TRAIL = [];
+function wantHand() { return SETTINGS.hand === 'either' ? null : SETTINGS.hand; }
+
+function onHandResult(res) {
+  const hs = res.landmarks || []; if (!hs.length) { H.lm = null; return; }
+  const hd = res.handedness || res.handednesses || [];
+  const items = hs.map((h, i) => { const c = hd[i] && hd[i][0] && hd[i][0].categoryName; return { h, side: c ? (c === 'Left' ? 'right' : 'left') : null }; });
+  const want = wantHand(); let pool = items;
+  if (want) { const m = items.filter(x => x.side === want); if (m.length) pool = m; else { H.lm = null; return; } }
+  let best = pool[0].h, bd = 1e9, side = pool[0].side;
+  const px = H.lm ? H.lm[8].x : .5, py = H.lm ? H.lm[8].y : .5;
+  for (const it of pool) { const d = (it.h[8].x - px) ** 2 + (it.h[8].y - py) ** 2; if (d < bd) { bd = d; best = it.h; side = it.side; } }
+  H.lm = best; H.side = side; H.lastSeen = now();
+}
+function onFaceResult(res) {
+  const fl = res.faceLandmarks || []; if (!fl.length) { F.lm = null; return; }
+  F.lm = fl[0]; F.lastSeen = now();
+  const cats = (res.faceBlendshapes && res.faceBlendshapes[0] && res.faceBlendshapes[0].categories) || [];
+  const b = {}; cats.forEach(c => b[c.categoryName] = c.score); F.blend = b;
+}
+
+function mapToBoard(mx, my) {
+  const dx = (mx - CAL.cx) / REACH, dy = (my - CAL.cy) / REACH;
+  return { x: BW / 2 + dx * (BW / 2), y: BH / 2 + dy * (BH / 2) };
+}
+
+function updateCalibration(dt) {
+  CAL.t += dt;
+  const seen = H.lm && now() - H.lastSeen < 400;
+  if (seen) { CAL.ok += dt; } else { CAL.ok = Math.max(0, CAL.ok - dt * .5); }
+  if (CAL.ok >= 2.6 && !CAL.done) {
+    const mx = 1 - H.lm[8].x, my = H.lm[8].y; CAL.cx = mx; CAL.cy = my; CAL.done = true;
+    S.mode = 'play'; S.sessionStart = now(); TRAIL.length = 0;
+  }
+}
+function recentre() {
+  if (H.lm) { CAL.cx = 1 - H.lm[8].x; CAL.cy = H.lm[8].y; toast(t('t.centred')); }
+  else toast(t('t.nocentre'));
+}
+function recalibrate() { CAL.ok = 0; CAL.t = 0; CAL.done = false; S.mode = 'calibrate'; }
+
+function updatePointer(dt) {
+  let mx = null, my = null;
+  if (SETTINGS.control === 'mouse') {
+    if (MOUSE.active) { mx = MOUSE.bx; my = MOUSE.by; S.pointer = { x: mx, y: my }; pushTrail(mx, my); }
+    else S.pointer = null;
+    return;
+  }
+  const seen = H.lm && now() - H.lastSeen < 250;
+  if (!seen) { S.pointer = null; return; }
+  const raw = mapToBoard(1 - H.lm[8].x, H.lm[8].y);
+  S.pointer = raw; pushTrail(raw.x, raw.y);
+}
+function pushTrail(x, y) {
+  const t = now();
+  TRAIL.push({ x, y, t }); while (TRAIL.length > 5) TRAIL.shift();
+  if (TRAIL.length >= 2) {
+    const a = TRAIL[TRAIL.length - 2], b = TRAIL[TRAIL.length - 1];
+    const dt = (b.t - a.t) / 1000; if (dt > 0 && dt < .2) {
+      const speed = Math.hypot(b.x - a.x, b.y - a.y) / dt;
+      trySlice(a.x, a.y, b.x, b.y, speed);
+    }
+  }
+}
+const MOUSE = { active: false, bx: 0, by: 0 };
+
+// ---------- canvas dwell buttons: for calibrate/rest/done cards, hands-only friendly ----------
+const DWELL_HOLD = 1.15;
+const DWELL = {}; // id -> progress 0..1
+function dwellButton(id, x, y, r, active, onFire) {
+  if (!active) { DWELL[id] = 0; return { hover: false, progress: 0 }; }
+  const p = S.pointer;
+  const hover = p && Math.hypot(p.x - x, p.y - y) < r;
+  const cur = DWELL[id] || 0;
+  DWELL[id] = clamp(cur + (hover ? 1 / DWELL_HOLD : -2 / DWELL_HOLD) * DT_LAST, 0, 1);
+  if (DWELL[id] >= 1) { DWELL[id] = 0; onFire(); }
+  return { hover, progress: DWELL[id] };
+}
+let DT_LAST = 0;
+
+// the golden bonus used to ask for an eyebrow raise, which isn't reliably picked up — it now
+// accepts whichever of three gestures reads most clearly for her: a smile, an open mouth, or a head turn
+function updateBonusGesture(dt) {
+  if (!SETTINGS.browBonus || S.mode !== 'play' || !goldOnScreen) return;
+  const seen = F.lm && now() - F.lastSeen < 400; if (!seen) return;
+  const smile = Math.max(0, ((F.blend.mouthSmileLeft || 0) + (F.blend.mouthSmileRight || 0)) / 2);
+  const jaw = F.blend.jawOpen || 0;
+  const yaw = faceYaw();
+  if (smileBase.v == null) { smileBase.samples.push(smile); if (smileBase.samples.length > 20) smileBase.v = Math.min(...smileBase.samples); }
+  if (jawBase.v == null) { jawBase.samples.push(jaw); if (jawBase.samples.length > 15) jawBase.v = Math.min(...jawBase.samples); }
+  if (yaw != null && yawBase.v == null) { yawBase.samples.push(yaw); if (yawBase.samples.length > 15) yawBase.v = yawBase.samples.reduce((a, b) => a + b, 0) / yawBase.samples.length; }
+  if (smileBase.v == null || jawBase.v == null || yawBase.v == null) return; // still settling on her relaxed face
+  const smileRel = Math.max(0, smile - smileBase.v);
+  const jawRel = Math.max(0, jaw - jawBase.v);
+  const yawRel = yaw == null ? 0 : Math.abs(yaw - yawBase.v);
+  if (smileRel > .26 || jawRel > .28 || yawRel > .11) popGolden();
+}
+
+// ---------- shy jellyfish: a face gesture, not a touch, is the only way to say hello ----------
+function spawnFaceJelly() {
+  if (faceJellyOnScreen) return;
+  const kind = Math.random() < .5 ? 'mouth' : 'turn';
+  // drifts in from any of the four corners, not just the top two
+  const corner = ['tl', 'tr', 'bl', 'br'][(Math.random() * 4) | 0];
+  const fromLeft = corner === 'tl' || corner === 'bl', fromTop = corner === 'tl' || corner === 'tr';
+  const x = fromLeft ? -70 : BW + 70, y = fromTop ? -70 : BH + 70;
+  faceJellyOnScreen = true;
+  objects.push({
+    id: Math.random().toString(36).slice(2), type: 'face' + kind, kind, def: FACE_JELLY[kind], theme: 'jellyfish',
+    x, y, baseX: x, vy: (fromTop ? 1 : -1) * (20 + Math.random() * 10), vx: (fromLeft ? 1 : -1) * (24 + Math.random() * 14),
+    swayAmp: 16 + Math.random() * 18, swayFreq: .4 + Math.random() * .3, swayPhase: Math.random() * TAU,
+    rot: 0, spin: 0, wingPhase: 0, sliced: false, age: 0, browProg: 0,
+  });
+  showDirective(kind, kind === 'mouth' ? 'hud.mouthHint' : 'hud.turnHint');
+  say(kind === 'mouth' ? 'say.shyMouth' : 'say.shyTurn');
+}
+function resolveFaceJelly(o) {
+  o.sliced = true; faceJellyOnScreen = false;
+  dismissDirective(o.kind);
+  burst(o.x, o.y, o.def.col, 24, 300); Snd.fanfare(); awardScore(50);
+  S.lastGentleNote = 'face'; advanceLevelProgress();
+  say('say.shyPop');
+}
+function updateFaceJelly(dt) {
+  if (!SETTINGS.faceJelly || S.mode !== 'play') return;
+  if (LEVELS[S.level] === 'jellyfish' && S.models.face) {
+    faceSpawnTimer -= dt;
+    if (faceSpawnTimer <= 0 && !faceJellyOnScreen) { spawnFaceJelly(); faceSpawnTimer = 26 + Math.random() * 18; }
+  }
+  const o = objects.find(x => (x.type === 'facemouth' || x.type === 'faceturn') && !x.sliced);
+  if (!o) return;
+  const seen = F.lm && now() - F.lastSeen < 400; if (!seen) return;
+  if (o.type === 'facemouth') {
+    const jaw = F.blend.jawOpen || 0;
+    if (jawBase.v == null) { jawBase.samples.push(jaw); if (jawBase.samples.length > 15) jawBase.v = Math.min(...jawBase.samples); return; }
+    if (jaw - jawBase.v > .28) resolveFaceJelly(o);
+  } else {
+    const yaw = faceYaw(); if (yaw == null) return;
+    if (yawBase.v == null) { yawBase.samples.push(yaw); if (yawBase.samples.length > 15) yawBase.v = yawBase.samples.reduce((a, b) => a + b, 0) / yawBase.samples.length; return; }
+    if (Math.abs(yaw - yawBase.v) > .11) resolveFaceJelly(o);
+  }
+}
+
+// =====================================================================
+// Zest — rendering: board, fruit, particles, self-view, cards
+// =====================================================================
+const canvas = $('#stage'); const ctx = canvas.getContext('2d');
+let DPR = Math.min(2, window.devicePixelRatio || 1), W = 960, H2 = 600;
+const SERIF = SANS; // one type family, kept as a named alias for readability below
+
+function layout() {
+  W = canvas.clientWidth; H2 = canvas.clientHeight; DPR = Math.min(2, window.devicePixelRatio || 1);
+  canvas.width = Math.round(W * DPR); canvas.height = Math.round(H2 * DPR);
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  BW = W; BH = H2;
+}
+window.addEventListener('resize', layout);
+
+function txt(str, x, y, o = {}) {
+  const size = o.size || 20, weight = o.weight || 600, font = o.font || SANS, color = o.color || COL.cream;
+  ctx.font = `${o.italic ? 'italic ' : ''}${weight} ${size}px ${font}`; ctx.fillStyle = color;
+  ctx.textAlign = o.align || 'left'; ctx.textBaseline = o.baseline || 'alphabetic';
+  if (o.shadow !== false) { ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.45)'; ctx.shadowBlur = 10; ctx.fillText(str, x, y); ctx.restore(); }
+  else ctx.fillText(str, x, y);
+}
+function rr(x, y, w, h, r) { ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h); }
+function card(x, y, w, h, r = 28) {
+  ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.5)'; ctx.shadowBlur = 40; ctx.shadowOffsetY = 14; rr(x, y, w, h, r); ctx.fillStyle = COL.card; ctx.fill(); ctx.restore();
+  rr(x, y, w, h, r); ctx.strokeStyle = 'rgba(233,208,155,.4)'; ctx.lineWidth = 1.5; ctx.stroke();
+}
+function ringProgress(x, y, r, p, col) {
+  ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.strokeStyle = 'rgba(255,255,255,.14)'; ctx.lineWidth = 4; ctx.stroke();
+  if (p > 0) { ctx.beginPath(); ctx.arc(x, y, r, -Math.PI / 2, -Math.PI / 2 + TAU * p); ctx.strokeStyle = col; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.stroke(); }
+}
+
+// ---------- background ----------
+function drawBg(t) {
+  const g = ctx.createRadialGradient(W * .5, H2 * .38, 40, W * .5, H2 * .5, Math.max(W, H2) * .8);
+  g.addColorStop(0, '#14152a'); g.addColorStop(1, COL.bg);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H2);
+  for (let i = 0; i < 5; i++) {
+    const bx = (Math.sin(t * .00006 + i * 2.1) * .5 + .5) * W, by = (Math.cos(t * .00005 + i * 1.7) * .5 + .5) * H2;
+    const gr = ctx.createRadialGradient(bx, by, 0, bx, by, 160);
+    gr.addColorStop(0, 'rgba(233,208,155,.05)'); gr.addColorStop(1, 'rgba(233,208,155,0)');
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(bx, by, 160, 0, TAU); ctx.fill();
+  }
+}
+
+// ---------- sprites: a balloon, a jellyfish or a bird depending on the level, a distinct mark per colour so colour is never the only cue ----------
+function drawFruit(o) {
+  ctx.save(); ctx.translate(o.x, o.y); ctx.rotate(o.rot);
+  if (o.sliced) ctx.globalAlpha = clamp(1 - o.age / .12, 0, 1);
+  if (o.type === 'bomb') { drawBomb(o); ctx.restore(); return; }
+  if (o.theme === 'jellyfish') { drawJellyfish(o); ctx.restore(); return; }
+  if (o.theme === 'bird') { drawBird(o); ctx.restore(); return; }
+  const def = o.def, r = def.r;
+  // string, swaying gently with the balloon
+  ctx.strokeStyle = 'rgba(255,255,255,.4)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(0, r * .95); ctx.quadraticCurveTo(Math.sin(o.age * 1.3) * 9, r * 1.3, Math.sin(o.age * 1.3) * 5, r * 1.62); ctx.stroke();
+  // balloon body
+  const grad = ctx.createRadialGradient(-r * .3, -r * .35, r * .15, 0, 0, r);
+  grad.addColorStop(0, def.col); grad.addColorStop(1, def.col2);
+  ctx.beginPath(); ctx.ellipse(0, 0, r * .9, r, 0, 0, TAU); ctx.closePath();
+  ctx.fillStyle = grad; ctx.fill();
+  ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(0,0,0,.16)'; ctx.stroke();
+  // knot
+  ctx.beginPath(); ctx.moveTo(-7, r * .86); ctx.lineTo(7, r * .86); ctx.lineTo(0, r * 1.03); ctx.closePath();
+  ctx.fillStyle = def.col2; ctx.fill();
+  // shine
+  ctx.beginPath(); ctx.ellipse(-r * .3, -r * .38, r * .2, r * .3, -.5, 0, TAU); ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fill();
+  // a marker unique to each balloon so shape+mark differ, not colour alone
+  ctx.fillStyle = 'rgba(255,255,255,.85)';
+  if (o.type === 'apple') { for (let i = -1; i <= 1; i++) { ctx.beginPath(); ctx.arc(0, i * r * .26, 3.2, 0, TAU); ctx.fill(); } }
+  else if (o.type === 'orange') { for (let i = 0; i < 5; i++) { const a = i / 5 * TAU; ctx.beginPath(); ctx.arc(Math.cos(a) * r * .4, Math.sin(a) * r * .4, 2.6, 0, TAU); ctx.fill(); } }
+  else if (o.type === 'kiwi') { ctx.save(); ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 3.2; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(-r * .2, -r * .2); ctx.lineTo(r * .2, r * .2); ctx.moveTo(r * .2, -r * .2); ctx.lineTo(-r * .2, r * .2); ctx.stroke(); ctx.restore(); }
+  else if (o.type === 'berry') { ctx.beginPath(); ctx.arc(0, 0, r * .17, 0, TAU); ctx.fill(); }
+  else if (o.type === 'melon') { ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = 2; for (let i = -1; i <= 1; i++) { ctx.beginPath(); ctx.moveTo(i * r * .28, -r * .65); ctx.quadraticCurveTo(i * r * .28 * 1.2, 0, i * r * .28, r * .65); ctx.stroke(); } }
+  else if (o.type === 'zest') { ctx.save(); ctx.shadowColor = '#ffe9a8'; ctx.shadowBlur = 24; ctx.beginPath(); ctx.ellipse(0, 0, r * .9 + 4, r + 4, 0, 0, TAU); ctx.strokeStyle = 'rgba(255,231,168,.85)'; ctx.lineWidth = 3; ctx.stroke(); ctx.restore(); for (let i = 0; i < 5; i++) { const a = i / 5 * TAU - Math.PI / 2; ctx.beginPath(); ctx.moveTo(Math.cos(a) * r * .25, Math.sin(a) * r * .25); ctx.lineTo(Math.cos(a) * r * .68, Math.sin(a) * r * .68); ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.stroke(); } }
+  ctx.restore();
+}
+// level 2: jellyfish drifting up with pulsing bell and trailing, swaying tentacles
+function drawJellyfish(o) {
+  const def = o.def, r = def.r;
+  const grad = ctx.createRadialGradient(-r * .25, -r * .3, r * .1, 0, 0, r);
+  grad.addColorStop(0, def.col); grad.addColorStop(1, def.col2);
+  ctx.beginPath();
+  ctx.arc(0, 0, r * .82, Math.PI, 0, false);
+  ctx.quadraticCurveTo(r * .4, r * .32, 0, r * .36);
+  ctx.quadraticCurveTo(-r * .4, r * .32, -r * .82, 0);
+  ctx.closePath();
+  ctx.fillStyle = grad; ctx.fill();
+  ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 2.4; ctx.lineCap = 'round';
+  for (let i = -2; i <= 2; i++) {
+    const bx = i * r * .26, sway = Math.sin(o.age * 1.6 + i * 1.1) * 11;
+    ctx.beginPath(); ctx.moveTo(bx, r * .3);
+    ctx.quadraticCurveTo(bx + sway, r * .92, bx + sway * 1.4, r * 1.5);
+    ctx.stroke();
+  }
+  ctx.beginPath(); ctx.ellipse(-r * .28, -r * .32, r * .18, r * .24, -.5, 0, TAU); ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.85)';
+  if (o.type === 'moon') { for (let i = 0; i < 4; i++) { const a = i / 4 * TAU; ctx.beginPath(); ctx.arc(Math.cos(a) * r * .32, Math.sin(a) * r * .16 - r * .12, 2.8, 0, TAU); ctx.fill(); } }
+  else if (o.type === 'rose') { ctx.beginPath(); ctx.arc(0, -r * .12, r * .1, 0, TAU); ctx.fill(); }
+  else if (o.type === 'amber') { ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 2; for (let i = 0; i < 3; i++) { const a = (i / 2) * Math.PI - Math.PI * .72; ctx.beginPath(); ctx.moveTo(0, -r * .12); ctx.lineTo(Math.cos(a) * r * .5, Math.sin(a) * r * .3 - r * .12); ctx.stroke(); } }
+  else if (o.type === 'violet') { ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 2.6; ctx.beginPath(); ctx.moveTo(-r * .12, -r * .12); ctx.lineTo(r * .12, -r * .12); ctx.moveTo(0, -r * .24); ctx.lineTo(0, 0); ctx.stroke(); }
+  else if (o.type === 'pearl') { ctx.save(); ctx.shadowColor = '#fff3d6'; ctx.shadowBlur = 24; ctx.beginPath(); ctx.arc(0, 0, r * .86, Math.PI, 0, false); ctx.strokeStyle = 'rgba(255,243,214,.85)'; ctx.lineWidth = 3; ctx.stroke(); ctx.restore(); }
+  else if (o.type === 'facemouth' || o.type === 'faceturn') {
+    ctx.save(); ctx.shadowColor = def.col; ctx.shadowBlur = 20 + Math.sin(o.age * 2.2) * 6;
+    ctx.beginPath(); ctx.arc(0, 0, r * .86, Math.PI, 0, false); ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = 2.4; ctx.stroke(); ctx.restore();
+    // two sleepy, closed eyes — she wakes it with a gesture, not a touch
+    ctx.strokeStyle = 'rgba(70,60,90,.6)'; ctx.lineWidth = 2.2; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-r * .22, -r * .1); ctx.quadraticCurveTo(-r * .12, -r * .02, -r * .02, -r * .1); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(r * .02, -r * .1); ctx.quadraticCurveTo(r * .12, -r * .02, r * .22, -r * .1); ctx.stroke();
+    if (o.type === 'facemouth') { ctx.beginPath(); ctx.ellipse(0, r * .08, r * .09, r * .07, 0, 0, TAU); ctx.fillStyle = 'rgba(70,60,90,.55)'; ctx.fill(); }
+    else { ctx.strokeStyle = 'rgba(70,60,90,.6)'; ctx.lineWidth = 2.4; ctx.beginPath(); ctx.moveTo(-r * .14, r * .08); ctx.lineTo(r * .1, r * .08); ctx.moveTo(r * .02, r * .01); ctx.lineTo(r * .1, r * .08); ctx.lineTo(r * .02, r * .15); ctx.stroke(); }
+  }
+}
+// level 3: birds soaring gently upward, wings flapping slowly, no speed or dive required
+function drawBird(o) {
+  const def = o.def, r = def.r;
+  const flap = Math.sin(o.age * 5 + o.wingPhase) * .5 + .5;
+  const wingAngle = -.15 - flap * .85;
+  const grad = ctx.createRadialGradient(-r * .2, -r * .2, r * .1, 0, 0, r * .6);
+  grad.addColorStop(0, def.col); grad.addColorStop(1, def.col2);
+  ctx.save(); ctx.translate(-r * .18, -r * .04); ctx.rotate(wingAngle);
+  ctx.beginPath(); ctx.ellipse(0, 0, r * .5, r * .2, 0, 0, TAU); ctx.fillStyle = def.col2; ctx.fill();
+  ctx.restore();
+  ctx.save(); ctx.translate(r * .18, -r * .04); ctx.rotate(-wingAngle);
+  ctx.beginPath(); ctx.ellipse(0, 0, r * .5, r * .2, 0, 0, TAU); ctx.fillStyle = def.col2; ctx.fill();
+  ctx.restore();
+  ctx.beginPath(); ctx.moveTo(-r * .12, r * .48); ctx.lineTo(0, r * .78); ctx.lineTo(r * .12, r * .48); ctx.closePath(); ctx.fillStyle = def.col2; ctx.fill();
+  ctx.beginPath(); ctx.ellipse(0, 0, r * .48, r * .6, 0, 0, TAU); ctx.fillStyle = grad; ctx.fill();
+  ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(0,0,0,.14)'; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-r * .08, -r * .52); ctx.lineTo(r * .08, -r * .52); ctx.lineTo(0, -r * .7); ctx.closePath(); ctx.fillStyle = '#f2a63d'; ctx.fill();
+  ctx.beginPath(); ctx.arc(-r * .1, -r * .48, 2.6, 0, TAU); ctx.fillStyle = '#1b1a24'; ctx.fill();
+  ctx.beginPath(); ctx.ellipse(-r * .15, -r * .22, r * .14, r * .18, -.5, 0, TAU); ctx.fillStyle = 'rgba(255,255,255,.4)'; ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.85)';
+  if (o.type === 'robin') { ctx.beginPath(); ctx.ellipse(0, r * .05, r * .2, r * .13, 0, 0, TAU); ctx.fillStyle = '#e0355f'; ctx.fill(); }
+  else if (o.type === 'bluebird') { ctx.beginPath(); ctx.arc(0, r * .05, 3, 0, TAU); ctx.fill(); }
+  else if (o.type === 'canary') { for (let i = -1; i <= 1; i++) { ctx.beginPath(); ctx.arc(i * r * .14, r * .05, 2.4, 0, TAU); ctx.fill(); } }
+  else if (o.type === 'dove') { ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-r * .15, r * .05); ctx.lineTo(r * .15, r * .05); ctx.stroke(); }
+  else if (o.type === 'phoenix') { ctx.save(); ctx.shadowColor = '#ffb15e'; ctx.shadowBlur = 22; ctx.beginPath(); ctx.ellipse(0, 0, r * .52, r * .64, 0, 0, TAU); ctx.strokeStyle = 'rgba(255,177,94,.85)'; ctx.lineWidth = 3; ctx.stroke(); ctx.restore(); }
+}
+// a soft grey "rain cloud" balloon — still no penalty, just a gentle visual change of pace
+function drawBomb() {
+  const r = BOMB_R;
+  ctx.strokeStyle = 'rgba(255,255,255,.3)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(0, r * .95); ctx.quadraticCurveTo(6, r * 1.3, 0, r * 1.62); ctx.stroke();
+  const grad = ctx.createRadialGradient(-r * .3, -r * .35, r * .15, 0, 0, r);
+  grad.addColorStop(0, '#9b98a7'); grad.addColorStop(1, '#5f5c6a');
+  ctx.beginPath(); ctx.ellipse(0, 0, r * .9, r, 0, 0, TAU); ctx.fillStyle = grad; ctx.fill();
+  ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(0,0,0,.2)'; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-7, r * .86); ctx.lineTo(7, r * .86); ctx.lineTo(0, r * 1.03); ctx.closePath(); ctx.fillStyle = '#5f5c6a'; ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.8)';
+  ctx.beginPath(); ctx.arc(-r * .18, -r * .06, r * .18, 0, TAU); ctx.arc(r * .06, -r * .13, r * .22, 0, TAU); ctx.arc(r * .3, -r * .04, r * .15, 0, TAU); ctx.fill();
+}
+function drawTrail() {
+  if (TRAIL.length < 2) return;
+  ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  for (let i = 1; i < TRAIL.length; i++) {
+    const a = TRAIL[i - 1], b = TRAIL[i]; const age = (now() - b.t) / 220;
+    ctx.globalAlpha = clamp(1 - age, 0, 1) * (i / TRAIL.length);
+    ctx.strokeStyle = COL.gold; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+  }
+  ctx.restore();
+}
+function drawParticles() {
+  for (const p of particles) { ctx.globalAlpha = clamp(1 - p.age / p.life, 0, 1); ctx.fillStyle = p.col; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, TAU); ctx.fill(); }
+  ctx.globalAlpha = 1;
+}
+function drawPointer() {
+  if (!S.pointer) return;
+  ctx.save(); ctx.shadowColor = 'rgba(233,208,155,.9)'; ctx.shadowBlur = 18;
+  ctx.beginPath(); ctx.arc(S.pointer.x, S.pointer.y, 9, 0, TAU); ctx.fillStyle = COL.gold; ctx.fill(); ctx.restore();
+}
+function drawHUD() {
+  txt(t('hud.score'), 26, 34, { size: 13, weight: 700, color: COL.muted, align: 'left' });
+  txt(String(S.score), 26, 66, { size: 34, weight: 800, color: COL.gold, align: 'left' });
+  txt(themeLabel(), 26, 96, { size: 13, weight: 700, color: COL.sage, align: 'left' });
+  if (S.combo > 1) txt(t('hud.combo', { n: S.combo }), 26, 120, { size: 16, weight: 700, color: COL.rose, align: 'left' });
+  if (S.frenzy > 0) { txt(t('hud.frenzy'), W / 2, 54, { size: 26, weight: 800, color: COL.gold, align: 'center' }); }
+  const fj = faceJellyOnScreen && objects.find(o => o.type === 'facemouth' || o.type === 'faceturn');
+  if (fj) txt(t(fj.type === 'facemouth' ? 'hud.mouthHint' : 'hud.turnHint'), W / 2, H2 - 26, { size: 18, weight: 700, color: COL.sage, align: 'center' });
+  else if (goldOnScreen && SETTINGS.browBonus) txt(t('hud.browHint'), W / 2, H2 - 26, { size: 18, weight: 700, color: COL.muted, align: 'center' });
+}
+
+// ---------- directive overlay: a big, translucent illustration + spoken line shown once when a new
+// gesture is asked for, so the direction is given both visually and out loud, then fades away ----------
+function wrapLines(str, maxW, o = {}) {
+  ctx.font = `${o.weight || 600} ${o.size || 20}px ${o.font || SANS}`;
+  const words = str.split(' '); const lines = []; let cur = '';
+  for (const w of words) {
+    const next = cur ? cur + ' ' + w : w;
+    if (ctx.measureText(next).width > maxW && cur) { lines.push(cur); cur = w; } else cur = next;
+  }
+  if (cur) lines.push(cur);
+  return lines;
+}
+function drawDirectiveIcon(kind, cx, cy, a) {
+  ctx.save(); ctx.globalAlpha = a; ctx.strokeStyle = COL.gold; ctx.fillStyle = COL.gold; ctx.lineWidth = 6; ctx.lineCap = 'round';
+  if (kind === 'bonus') {
+    // a simple smiling face: the bonus now welcomes any of a smile, an open mouth, or a head turn
+    // (the words below spell out all three; this is just the friendliest one to draw)
+    ctx.beginPath(); ctx.arc(cx, cy, 34, 0, TAU); ctx.globalAlpha = a * .22; ctx.fill();
+    ctx.globalAlpha = a; ctx.beginPath(); ctx.arc(cx, cy, 34, 0, TAU); ctx.lineWidth = 5; ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx - 12, cy - 6, 3.4, 0, TAU); ctx.arc(cx + 12, cy - 6, 3.4, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx, cy - 2, 16, Math.PI * .12, Math.PI * .88); ctx.lineWidth = 5; ctx.stroke();
+  } else if (kind === 'mouth') {
+    // an open mouth: "open your mouth"
+    ctx.beginPath(); ctx.ellipse(cx, cy, 34, 26, 0, 0, TAU); ctx.globalAlpha = a * .22; ctx.fill();
+    ctx.globalAlpha = a; ctx.beginPath(); ctx.ellipse(cx, cy, 34, 26, 0, 0, TAU); ctx.lineWidth = 5; ctx.stroke();
+  } else if (kind === 'turn') {
+    // a face silhouette with a curved arrow: "turn your head"
+    ctx.beginPath(); ctx.arc(cx, cy, 30, 0, TAU); ctx.globalAlpha = a * .22; ctx.fill();
+    ctx.globalAlpha = a; ctx.beginPath(); ctx.arc(cx, cy, 30, 0, TAU); ctx.lineWidth = 5; ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx, cy, 52, -Math.PI * .65, -Math.PI * .1); ctx.lineWidth = 5; ctx.stroke();
+    const ax = cx + Math.cos(-Math.PI * .1) * 52, ay = cy + Math.sin(-Math.PI * .1) * 52;
+    ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(ax - 10, ay - 9); ctx.lineTo(ax + 4, ay + 11); ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+}
+function drawDirective() {
+  if (!DIRECTIVE.active) return;
+  const fadeIn = .4, fadeOut = 1.1, tt = DIRECTIVE.t, dur = DIRECTIVE.dur;
+  let a = 1;
+  if (tt < fadeIn) a = tt / fadeIn; else if (tt > dur - fadeOut) a = Math.max(0, (dur - tt) / fadeOut);
+  if (a <= 0) return;
+  const cx = W / 2, cy = H2 / 2 - 20;
+  ctx.save();
+  ctx.beginPath(); ctx.arc(cx, cy - 6, 130, 0, TAU); ctx.fillStyle = `rgba(10,11,20,${.5 * a})`; ctx.fill();
+  drawDirectiveIcon(DIRECTIVE.icon, cx, cy - 46, a);
+  const lines = wrapLines(t(DIRECTIVE.key), 320, { size: 22, weight: 700 });
+  ctx.globalAlpha = a;
+  lines.forEach((ln, i) => txt(ln, cx, cy + 46 + i * 28, { size: 22, weight: 700, color: COL.cream, align: 'center' }));
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+// ---------- self view with hand/face landmarks (mirrored) ----------
+function drawConn(lm, conns, mp, color, lw, dots) {
+  ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.lineCap = 'round'; ctx.beginPath();
+  for (const c of conns) { const a = lm[c.start], b = lm[c.end]; if (!a || !b) continue; const [x1, y1] = mp(a), [x2, y2] = mp(b); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); }
+  ctx.stroke();
+  if (dots) { ctx.fillStyle = color; for (const p of lm) { const [x, y] = mp(p); ctx.beginPath(); ctx.arc(x, y, lw * 1.1, 0, TAU); ctx.fill(); } }
+}
+function drawSelf(x, y, w, h, r) {
+  ctx.save(); rr(x, y, w, h, r); ctx.clip(); ctx.fillStyle = '#0d0918'; ctx.fillRect(x, y, w, h);
+  if (S.camOn && video.readyState >= 2) {
+    const vw = video.videoWidth || 640, vh = video.videoHeight || 480, sc = Math.max(w / vw, h / vh), dw = vw * sc, dh = vh * sc, ox = (w - dw) / 2, oy = (h - dh) / 2;
+    ctx.save(); ctx.translate(x + ox + dw, y + oy); ctx.scale(-1, 1); ctx.globalAlpha = .9; ctx.drawImage(video, 0, 0, dw, dh); ctx.restore();
+    const mp = p => [x + ox + (1 - p.x) * dw, y + oy + p.y * dh];
+    if (MP && H.lm && now() - H.lastSeen < 500) drawConn(H.lm, MP.HandLandmarker.HAND_CONNECTIONS, mp, 'rgba(233,208,155,.95)', Math.max(1.5, w / 130), true);
+    if (MP && F.lm && now() - F.lastSeen < 500) { const FL = MP.FaceLandmarker; ['FACE_LANDMARKS_LIPS', 'FACE_LANDMARKS_FACE_OVAL'].forEach(k => FL[k] && drawConn(F.lm, FL[k], mp, 'rgba(248,238,220,.6)', Math.max(1, w / 220), false)); }
+  } else { txt('camera off', x + w / 2, y + h / 2, { size: 16, color: COL.muted, align: 'center', italic: true, shadow: false }); }
+  ctx.restore(); rr(x, y, w, h, r); ctx.strokeStyle = 'rgba(233,208,155,.55)'; ctx.lineWidth = 1.5; ctx.stroke();
+}
+
+// ---------- cards: calibrate / rest / done ----------
+function calCard(dt) {
+  const w = Math.min(560, W - 60), h = 300, x = W / 2 - w / 2, y = H2 / 2 - h / 2;
+  const seen = H.lm && now() - H.lastSeen < 400;
+  card(x, y, w, h);
+  txt(t('cal.title'), W / 2, y + 66, { size: 26, weight: 600, color: COL.gold, align: 'center' });
+  txt(seen ? t('cal.ok') : t('cal.hand'), W / 2, y + 96, { size: 16, color: seen ? COL.muted : COL.rose, align: 'center' });
+  ringProgress(W / 2, y + 170, 46, clamp(CAL.ok / 2.6, 0, 1), COL.gold);
+  if (!seen && CAL.t > 6) txt(t('cal.tip'), W / 2, y + 220, { size: 13, color: COL.muted, align: 'center', italic: true });
+  const hr = dwellButton('calSkip', W / 2, y + h - 46, 26, true, () => { CAL.done = true; S.mode = 'play'; S.sessionStart = now(); TRAIL.length = 0; });
+  ringProgress(W / 2, y + h - 46, 26, hr.progress, COL.rose);
+  txt(t('cal.skip'), W / 2, y + h - 41, { size: 13, weight: 700, color: COL.cream, align: 'center' });
+}
+function restCard(kind) {
+  const w = Math.min(560, W - 60), h = 260, x = W / 2 - w / 2, y = H2 / 2 - h / 2;
+  card(x, y, w, h);
+  const title = kind === 'done' ? t('done.title') : t('rest.title');
+  txt(title, W / 2, y + 60, { size: 26, weight: 600, color: COL.gold, align: 'center' });
+  txt(t('stats', { n: T.slices, c: T.bestCombo }), W / 2, y + 92, { size: 16, color: COL.muted, align: 'center' });
+  const bx = W / 2, by = y + h - 64;
+  const hr = dwellButton('restGo', bx, by, 40, true, () => { S.mode = 'play'; S.sessionStart = now(); });
+  ringProgress(bx, by, 40, hr.progress, COL.gold);
+  txt(kind === 'done' ? t('done.playAgain') : t('rest.keep'), bx, by + 5, { size: 14, weight: 700, color: COL.cream, align: 'center' });
+}
+
+// =====================================================================
+// Zest — main loop, screens, settings wiring, test hooks
+// =====================================================================
+function toast(msg, ms = 3200) {
+  const el = $('#toast'); el.textContent = msg; el.classList.remove('hidden'); el.style.opacity = '1';
+  clearTimeout(toast._t); toast._t = setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.classList.add('hidden'), 400); }, ms);
+}
+
+function showWelcome() {
+  S.mode = 'menu'; $('#welcome').classList.remove('hidden'); $('#gear').classList.add('hidden');
+  applyLang();
+}
+function hideWelcome() { $('#welcome').classList.add('hidden'); }
+
+async function begin() {
+  hideWelcome(); $('#loading').classList.remove('hidden'); const msg = m => $('#loadMsg').textContent = m;
+  say('say.beginIntro');
+  try {
+    msg(t('load.cam')); await startCamera();
+    if (SETTINGS.voiceFrenzy) { try { await startMic(); } catch (e) { setSetting('voiceFrenzy', false); } }
+    msg(t('load.hand')); await loadModels(msg);
+    if (!S.models.hand) { toast(t('t.hand')); setSetting('control', 'mouse'); }
+  } catch (e) {
+    toast(t('t.cam')); setSetting('control', 'mouse');
+  }
+  $('#loading').classList.add('hidden'); $('#gear').classList.remove('hidden');
+  layout(); resetWorld();
+  S._spokenMode = null; S._spokenPlayIntro = false;
+  if (SETTINGS.control === 'mouse') { S.mode = 'play'; S.sessionStart = now(); }
+  else { S.mode = 'calibrate'; CAL.ok = 0; CAL.t = 0; CAL.done = false; }
+  requestAnimationFrame(loop);
+}
+
+// ---------- a short spoken line whenever the mode changes, never repeated for the same mode ----------
+function speakForMode() {
+  if (S.mode === S._spokenMode) return;
+  S._spokenMode = S.mode;
+  if (S.mode === 'calibrate') say('say.calibrate', null, { interrupt: true });
+  else if (S.mode === 'play' && !S._spokenPlayIntro) { S._spokenPlayIntro = true; say('say.playIntro', null, { interrupt: true }); }
+  else if (S.mode === 'rest') say('say.rest', null, { interrupt: true });
+  else if (S.mode === 'done') say('say.done', null, { interrupt: true });
+}
+
+// ---------- mouse fallback ----------
+canvas.addEventListener('mousemove', e => {
+  if (SETTINGS.control !== 'mouse') return;
+  const r = canvas.getBoundingClientRect();
+  MOUSE.active = true; MOUSE.bx = e.clientX - r.left; MOUSE.by = e.clientY - r.top;
+});
+canvas.addEventListener('mouseleave', () => { MOUSE.active = false; });
+
+// ---------- main loop ----------
+let lastT = null, restAt = 240, doneAt = 600 * 5; // rest ~4min, gentle close ~50min (generous, never forced)
+function loop(t) {
+  if (lastT == null) lastT = t;
+  let dt = (t - lastT) / 1000; lastT = t; dt = Math.min(dt, .05);
+  DT_LAST = dt;
+  if (!S.hold && document.visibilityState === 'visible') {
+    if (S.mode !== 'menu') {
+      if (S.models.hand || S.models.face) {
+        detectFrame(t);
+      }
+      readMic(dt);
+      if (S.mode === 'calibrate') updateCalibration(dt);
+      if (S.mode === 'play') { updatePointer(dt); updateWorld(dt); updateBonusGesture(dt); updateFaceJelly(dt); updateDirective(dt); updateAmbientVoice(dt); }
+    }
+    updateTweens();
+  }
+  render(t);
+  requestAnimationFrame(loop);
+}
+
+async function detectFrame(t) {
+  if (!video || video.readyState < 2) return;
+  const vt = video.currentTime; if (vt === lastVT) return; lastVT = vt;
+  phase++;
+  try {
+    if (handLM && (phase % 2 === 0 || !faceLM)) onHandResult(await handLM.detectForVideo(video, t) || {});
+    else if (faceLM) onFaceResult(await faceLM.detectForVideo(video, t) || {});
+  } catch (e) { /* transient */ }
+}
+
+function render(t) {
+  speakForMode();
+  drawBg(t);
+  if (S.mode === 'play' || S.mode === 'calibrate' || S.mode === 'rest' || S.mode === 'done') {
+    drawParticles();
+    for (const o of objects) drawFruit(o);
+    drawTrail(); drawPointer(); drawHUD(); drawDirective();
+  }
+  if (S.mode === 'calibrate') calCard();
+  if (S.mode === 'rest') restCard('rest');
+  if (S.mode === 'done') restCard('done');
+  if (SETTINGS.selfview && S.camOn && S.mode !== 'menu') drawSelf(W - 168, 66, 148, 110, 14);
+  if (S.mode === 'play' && S.sessionStart) {
+    const elapsed = (now() - S.sessionStart) / 1000;
+    if (elapsed > restAt && !S._rested) { S._rested = true; S.mode = 'rest'; }
+    else if (elapsed > doneAt) { S.mode = 'done'; }
+  }
+}
+
+// ---------- settings UI ----------
+function renderOpts() {
+  const rows = [
+    ['control', [['hand', t('opt.control.hand')], ['mouse', t('opt.control.mouse')]]],
+    ['hand', [['either', t('opt.hand.either')], ['left', t('opt.hand.left')], ['right', t('opt.hand.right')]]],
+    ['pace', [['calm', t('opt.pace.calm')], ['lively', t('opt.pace.lively')]]],
+  ];
+  const rowLabel = { control: 'opt.control', hand: 'opt.hand', pace: 'opt.pace' };
+  const el = $('#opts'); el.innerHTML = '';
+  rows.forEach(([key, opts]) => {
+    const grp = document.createElement('div'); grp.className = 'grp';
+    const lab = document.createElement('label'); lab.textContent = t(rowLabel[key]); grp.appendChild(lab);
+    const seg = document.createElement('div'); seg.className = 'seg'; seg.setAttribute('role', 'group');
+    opts.forEach(([v, label]) => {
+      const b = document.createElement('button'); b.textContent = label; b.className = SETTINGS[key] === v ? 'on' : ''; b.setAttribute('aria-pressed', SETTINGS[key] === v);
+      b.onclick = () => { setSetting(key, v); renderOpts(); };
+      seg.appendChild(b);
+    });
+    grp.appendChild(seg); el.appendChild(grp);
+  });
+  const toggles = [['sound', 'opt.sound'], ['voicePrompts', 'opt.voicePrompts'], ['selfview', 'opt.selfview'], ['voiceFrenzy', 'opt.voiceFrenzy'], ['browBonus', 'opt.browBonus'], ['faceJelly', 'opt.faceJelly']];
+  toggles.forEach(([key, labelKey]) => {
+    const grp = document.createElement('div'); grp.className = 'grp';
+    const lab = document.createElement('label'); lab.textContent = t(labelKey); grp.appendChild(lab);
+    const seg = document.createElement('div'); seg.className = 'seg';
+    [[true, t('on')], [false, t('off')]].forEach(([v, l]) => {
+      const b = document.createElement('button'); b.textContent = l; b.className = SETTINGS[key] === v ? 'on' : ''; b.setAttribute('aria-pressed', SETTINGS[key] === v);
+      b.onclick = () => { setSetting(key, v); renderOpts(); };
+      seg.appendChild(b);
+    });
+    grp.appendChild(seg); el.appendChild(grp);
+  });
+  const lgrp = document.createElement('div'); lgrp.className = 'grp';
+  const llab = document.createElement('label'); llab.textContent = t('opt.lang'); lgrp.appendChild(llab);
+  const lseg = document.createElement('div'); lseg.className = 'seg'; lseg.setAttribute('role', 'group');
+  Object.keys(LANG_META).forEach(k => {
+    const b = document.createElement('button'); b.textContent = LANG_META[k].name; b.lang = LANG_META[k].html; b.dataset.lang = k;
+    b.className = SETTINGS.lang === k ? 'on' : ''; b.setAttribute('aria-pressed', SETTINGS.lang === k);
+    b.onclick = () => { setSetting('lang', k); renderOpts(); };
+    lseg.appendChild(b);
+  });
+  lgrp.appendChild(lseg); el.appendChild(lgrp);
+}
+function openSettings(open) {
+  const show = open === undefined ? $('#settings').classList.contains('hidden') : open;
+  $('#settings').classList.toggle('hidden', !show); S.hold = show;
+  if (show) renderOpts();
+}
+$('#openSettings').onclick = () => openSettings(true);
+$('#closeSettings').onclick = () => openSettings(false);
+$('#gear').onclick = () => openSettings();
+$('#begin').onclick = begin;
+$('#btnRecentre').onclick = () => { openSettings(false); recentre(); };
+$('#btnRecal').onclick = () => { openSettings(false); recalibrate(); };
+
+document.addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  if (k === ' ') { S.hold = !S.hold; e.preventDefault(); }
+  else if (k === 'c') recentre();
+  else if (k === 's') openSettings();
+  else if (k === 'escape') openSettings(false);
+});
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') S.hold = true; });
+
+layout(); showWelcome();
+
+// ---------- test hooks ----------
+window.__zest = {
+  get S() { return S; }, get T() { return T; }, get store() { return store; },
+  get objects() { return objects; }, get particles() { return particles; },
+  get CAL() { return CAL; }, get SETTINGS() { return SETTINGS; },
+  begin, showWelcome, openSettings, setSetting,
+  spawnOne, trySlice, checkTouchPop, triggerFrenzy, popGolden, resetWorld, say,
+  get goldOnScreen() { return goldOnScreen; },
+  get LEVELS() { return LEVELS; }, get THEMES() { return THEMES; },
+  get F() { return F; }, get jawBase() { return jawBase; }, get yawBase() { return yawBase; }, get smileBase() { return smileBase; },
+  updateBonusGesture,
+  get faceJellyOnScreen() { return faceJellyOnScreen; },
+  spawnFaceJelly, updateFaceJelly, faceYaw,
+  forceCalibrated() { CAL.done = true; S.mode = 'play'; S.sessionStart = now(); },
+  skipRest() { S.mode = 'play'; S.sessionStart = now(); },
+  t, applyLang, recentre, recalibrate, get LANG_META() { return LANG_META; },
+  calState() {
+    const seen = H.lm && now() - H.lastSeen < 400;
+    return { seen, showTip: (!seen && CAL.t > 6) };
+  },
+  get DIRECTIVE() { return DIRECTIVE; }, showDirective, dismissDirective,
+  updateAmbientVoice, get ambientTimer() { return ambientTimer; }, set ambientTimer(v) { ambientTimer = v; },
+  get lastSpeechAt() { return lastSpeechAt; }, set lastSpeechAt(v) { lastSpeechAt = v; },
+  get SPEECH_Q() { return SPEECH_Q; }, get speechBusy() { return speechBusy; }, set speechBusy(v) { speechBusy = v; },
+};
+
+</script>
+</body>
+</html>
